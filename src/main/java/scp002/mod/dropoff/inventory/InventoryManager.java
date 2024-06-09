@@ -12,6 +12,7 @@ import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.StringUtils;
 import scp002.mod.dropoff.config.DropOffConfig;
+import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawerGroup;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,8 +52,9 @@ public class InventoryManager {
                     InventoryData currentInvData;
 
                     if (currentEntity instanceof IInventory) {
+                        boolean isDrawerGroup = currentEntity instanceof IDrawerGroup;
                         //noinspection unchecked
-                        currentInvData = getInventoryData((T) currentEntity);
+                        currentInvData = getInventoryData((T) currentEntity, isDrawerGroup);
                     } else if (currentEntity instanceof TileEntityEnderChest) {
                         currentInvData = getInventoryData((TileEntityEnderChest) currentEntity);
                     } else {
@@ -88,10 +90,6 @@ public class InventoryManager {
                 ((leftTag == null && rightTag == null) || (leftTag != null && leftTag.equals(rightTag)));
     }
 
-    /**
-     * This method returns the name of the block that appears in the tooltip when you move the mouse over the item that
-     * corresponds to it.
-     */
     String getItemStackName(IInventory inventory) {
         if (inventory instanceof InventoryLargeChest) {
             return Block.getBlockById(54).getLocalizedName();
@@ -115,9 +113,6 @@ public class InventoryManager {
         return Math.min(inventory.getInventoryStackLimit(), stack.getMaxStackSize());
     }
 
-    /**
-     * This method checks the config to determine whether to process the inventory of the specified type or not.
-     */
     private boolean isInventoryValid(InventoryData inventoryData) {
         TileEntity entity = inventoryData.getEntities().get(0);
 
@@ -158,10 +153,6 @@ public class InventoryManager {
         return isInventoryNameValid(inventoryName) || DropOffConfig.INSTANCE.dropOffEveryPlace;
     }
 
-    /**
-     * This method checks the config text field to determine whether to process the inventory with the specified name
-     * or not.
-     */
     private boolean isInventoryNameValid(String name) {
         String[] containerNames =
                 StringUtils.split(DropOffConfig.INSTANCE.processContainersWithNames, DropOffConfig.INSTANCE.delimiter);
@@ -177,8 +168,7 @@ public class InventoryManager {
         return false;
     }
 
-    // Implemented without a loop, because the order of the arguments in the "new InventoryLargeChest()" is important.
-    private <T extends TileEntity & IInventory> InventoryData getInventoryData(T leftEntity) {
+    private <T extends TileEntity & IInventory> InventoryData getInventoryData(T leftEntity, boolean isDrawerGroup) {
         List<TileEntity> entities = new ArrayList<>();
 
         if (leftEntity instanceof TileEntityChest) {
@@ -187,7 +177,6 @@ public class InventoryManager {
             TileEntity rightEntity = world.getTileEntity(leftEntity.xCoord - 1, leftEntity.yCoord,
                     leftEntity.zCoord);
 
-            // ----------------------------------------Check for trapped chests-----------------------------------------
             if (leftEntity.getBlockType().canProvidePower()) {
                 if (rightEntity instanceof TileEntityChest && rightEntity.getBlockType().canProvidePower()) {
                     InventoryLargeChest largeChest = new InventoryLargeChest(chestName, (IInventory) rightEntity,
@@ -196,7 +185,7 @@ public class InventoryManager {
                     entities.add(leftEntity);
                     entities.add(rightEntity);
 
-                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL);
+                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
                 }
 
                 rightEntity = world.getTileEntity(leftEntity.xCoord + 1, leftEntity.yCoord,
@@ -209,7 +198,7 @@ public class InventoryManager {
                     entities.add(leftEntity);
                     entities.add(rightEntity);
 
-                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL);
+                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
                 }
 
                 rightEntity = world.getTileEntity(leftEntity.xCoord, leftEntity.yCoord,
@@ -222,7 +211,7 @@ public class InventoryManager {
                     entities.add(leftEntity);
                     entities.add(rightEntity);
 
-                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL);
+                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
                 }
 
                 rightEntity = world.getTileEntity(leftEntity.xCoord, leftEntity.yCoord,
@@ -235,9 +224,9 @@ public class InventoryManager {
                     entities.add(leftEntity);
                     entities.add(rightEntity);
 
-                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL);
+                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
                 }
-            } else { // ------------------------------------Check for regular chests------------------------------------
+            } else {
                 if (rightEntity instanceof TileEntityChest && !rightEntity.getBlockType().canProvidePower()) {
                     InventoryLargeChest largeChest = new InventoryLargeChest(chestName, (IInventory) rightEntity,
                             leftEntity);
@@ -245,7 +234,7 @@ public class InventoryManager {
                     entities.add(leftEntity);
                     entities.add(rightEntity);
 
-                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL);
+                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
                 }
 
                 rightEntity = world.getTileEntity(leftEntity.xCoord + 1, leftEntity.yCoord,
@@ -258,7 +247,7 @@ public class InventoryManager {
                     entities.add(leftEntity);
                     entities.add(rightEntity);
 
-                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL);
+                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
                 }
 
                 rightEntity = world.getTileEntity(leftEntity.xCoord, leftEntity.yCoord,
@@ -271,7 +260,7 @@ public class InventoryManager {
                     entities.add(leftEntity);
                     entities.add(rightEntity);
 
-                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL);
+                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
                 }
 
                 rightEntity = world.getTileEntity(leftEntity.xCoord, leftEntity.yCoord,
@@ -284,31 +273,28 @@ public class InventoryManager {
                     entities.add(leftEntity);
                     entities.add(rightEntity);
 
-                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL);
+                    return new InventoryData(entities, largeChest, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
                 }
             }
         }
 
         entities.add(leftEntity);
 
-        return new InventoryData(entities, leftEntity, InteractionResult.DROPOFF_FAIL);
+        return new InventoryData(entities, leftEntity, InteractionResult.DROPOFF_FAIL, isDrawerGroup);
     }
 
     private InventoryData getInventoryData(TileEntityEnderChest entity) {
         List<TileEntity> entities = Collections.singletonList(entity);
 
-        return new InventoryData(entities, player.getInventoryEnderChest(), InteractionResult.DROPOFF_FAIL);
+        return new InventoryData(entities, player.getInventoryEnderChest(), InteractionResult.DROPOFF_FAIL, false);
     }
 
     public abstract class Slots {
-
         public static final int LAST = -1;
         public static final int FIRST = 0;
         public static final int FURNACE_FUEL = 1;
         public static final int FURNACE_OUT = 2;
         public static final int PLAYER_INVENTORY_FIRST = 9;
         public static final int PLAYER_INVENTORY_LAST = 36;
-
     }
-
 }

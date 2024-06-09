@@ -12,11 +12,14 @@ public class InventoryData {
     private final IInventory inventory;
     private InteractionResult interactionResult;
 
+    private final boolean isDrawerGroup;
+
     @SuppressWarnings("SameParameterValue")
-    InventoryData(List<TileEntity> entities, IInventory inventory, InteractionResult interactionResult) {
+    InventoryData(List<TileEntity> entities, IInventory inventory, InteractionResult interactionResult, boolean isDrawerGroup) {
         this.entities = entities;
         this.inventory = inventory;
         this.interactionResult = interactionResult;
+        this.isDrawerGroup = isDrawerGroup;
     }
 
     public List<TileEntity> getEntities() {
@@ -29,6 +32,10 @@ public class InventoryData {
 
     public InteractionResult getInteractionResult() {
         return interactionResult;
+    }
+
+    public boolean isDrawerGroup() {
+        return isDrawerGroup;
     }
 
     @SuppressWarnings("SameParameterValue")

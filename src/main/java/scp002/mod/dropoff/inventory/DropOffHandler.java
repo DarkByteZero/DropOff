@@ -5,6 +5,8 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import org.apache.commons.lang3.StringUtils;
 import scp002.mod.dropoff.config.DropOffConfig;
+import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawer;
+import com.jaquadro.minecraft.storagedrawers.api.storage.IDrawerGroup;
 
 public class DropOffHandler {
 
@@ -54,7 +56,11 @@ public class DropOffHandler {
 
                 int oldPlayerStackSize = playerStacks[i].stackSize;
 
-                movePlayerStack(i, toInventory);
+                if (toInventoryData.isDrawerGroup()) {
+                    movePlayerStackToDrawer(i, (IDrawerGroup) toInventory);
+                } else {
+                    movePlayerStack(i, toInventory);
+                }
 
                 int newPlayerStackSize = (playerStacks[i] == null) ? 0 : playerStacks[i].stackSize;
                 int itemsMoved = oldPlayerStackSize - newPlayerStackSize;
@@ -67,9 +73,6 @@ public class DropOffHandler {
         }
     }
 
-    /**
-     * This method checks the config text field to determine whether to DropOff the item with the specified name or not.
-     */
     private boolean isItemValid(String name) {
         String[] itemNames = StringUtils.split(DropOffConfig.INSTANCE.excludeItemsWithNames,
                 DropOffConfig.INSTANCE.delimiter);
@@ -125,4 +128,31 @@ public class DropOffHandler {
         }
     }
 
+    private void movePlayerStackToDrawer(int playerStackIndex, IDrawerGroup drawerGroup) {
+        ItemStack playerStack = playerStacks[playerStackIndex];
+
+        for (int i = 0; i < drawerGroup.getDrawerCount(); ++i) {
+            IDrawer drawer = drawerGroup.getDrawer(i);
+            if (drawer == null || drawer.isEmpty() || !drawer.canItemBeStored(playerStack)) {
+                continue;
+            }
+
+            ItemStack drawerStack = drawer.getStoredItemPrototype();
+            if (inventoryManager.isStacksEqual(drawerStack, playerStack)) {
+                int maxStackSize = drawer.getMaxCapacity(playerStack);
+                int drawerStackSize = drawer.getStoredItemCount();
+                int amountToTransfer = Math.min(playerStack.stackSize, maxStackSize - drawerStackSize);
+
+                if (amountToTransfer > 0) {
+                    drawer.setStoredItemCount(drawerStackSize + amountToTransfer);
+                    playerStack.stackSize -= amountToTransfer;
+
+                    if (playerStack.stackSize == 0) {
+                        playerStacks[playerStackIndex] = null;
+                        return;
+                    }
+                }
+            }
+        }
+    }
 }

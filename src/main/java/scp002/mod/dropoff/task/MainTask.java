@@ -88,5 +88,4 @@ public class MainTask implements Runnable {
 
         player.inventoryContainer.detectAndSendChanges();
     }
-
 }
